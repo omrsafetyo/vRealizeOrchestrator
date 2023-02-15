@@ -1,7 +1,7 @@
 # vRO Queueing
 
 
-#Synopsis
+## Synopsis
 
 This is a little project I had for VRO to increase the resiliency of decoupled operations.
 I had several pieces of a workflow that were initially part of a workflow, and the workflow would wait for a pre-condition to be met, and then it would execute a particular logic.  This resulted in the parent becoming quite long-running.  Additionally, these operations could not be retried easily outside of the context of the parent workflow.  I decided to build a queueing system.  Essentially you could pop items into the queue, and have a scheduled workflow periodically check the queue to see if there are items to be processed, do a series of checks, try to do the process in question, and then either discard or re-queue the queue item, depending on the exit conditions.
