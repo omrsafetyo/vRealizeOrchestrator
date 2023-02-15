@@ -1,0 +1,49 @@
+inputForms:
+  - layout:
+      pages: []
+    schema: {}
+    itemId: ''
+workflowSchema:
+  display-name: Schedule Queue Poller Scheduled Task
+  description: >-
+    This workflow will schedule a recurring instance of the queue poller.  This
+    may need to be run periodically if the poller scheduled task stops executing
+    and stays in a pending state.
+  position:
+    'y': 50
+    x: 100
+  input: {}
+  output: {}
+  attrib: []
+  workflow-item:
+    - in-binding: {}
+      out-binding: {}
+      position:
+        'y': 50
+        x: 300
+      name: item0
+      type: end
+      end-mode: '0'
+      comparator: 0
+    - display-name: Create the scheduled task
+      script:
+        value: "var workflowId = \"e6d27cfc-ac02-4906-be42-dc0112c7563d\"\r\n\r\n//TODO:  Check to see if there is already a scheduled task for this workflow, and delete it.\r\n\r\nvar currentDateObj = new Date();\r\nvar numberOfMlSeconds = currentDateObj.getTime();\r\nvar addMinuteMls = 60 * 1000;\r\nvar startDate = new Date(numberOfMlSeconds + addMinuteMls);\r\n\r\n//var startDate = Date.now()\r\n\r\n\r\n\r\nvar endDate = null;\r\nvar recurrenceCycle = \"every-hours\";\r\nvar recurrencePattern = \"00:00, 15:00, 30:00, 45:00\";\r\n//var recurrencePattern = \"00:00, 30:00\";\r\nvar workflowArguments= {};\r\n\r\nvar credential_prefix = \"VRO_Network_Task\";\r\nvar credential = System.getModule(\"omrsafetyo.utilities.generic\").getCredentialUsernameAndPassword(credential_prefix);\r\n\r\nvar password = credential[\"password\"];\r\nvar username = credential[\"username\"];\r\n\r\nvar workflowToCall = System.getModule(\"com.vmware.library.workflow\").getWorkflowById(workflowId) ;\r\nactionResult = System.getModule(\"com.vmware.library.tasks\").createRecurrentTask(workflowToCall,startDate,endDate,recurrencePattern,recurrenceCycle,workflowArguments,username,password) ;\r\n\r\n\r\n/*\r\nCreates a recurrent task. Returns the newly created task.\r\nPossible recurrenceCycle attribute values:\r\n- one-time: Task runs once only.\r\n- every-minutes: Task runs every minute\r\n- every-hours: Task runs hourly\r\n- every-days: Task runs daily\r\n- every-weeks: Task runs weekly\r\n- every-months: Task runs monthly \r\n\r\nPossible recurrencePattern attribute values depend on the recurrenceCycle attribute value:\r\n- one-time: Ignores the recurrencePattern attribute\r\n- every-minutes: Seconds into each minute at which the task starts, for example, \"00\" or \"00, 30\" \r\n- every-hours: Minutes and seconds into each hour at which the task starts, for example, \"00:00\" or \"00:00, 30:00\"\r\n- every-days: Time at which the task starts each day, for example, \"18:30:00\" or \"12:00:00, 19:30:00\"\r\n- every-weeks: Day and time at which the task starts each week, for example, \"Mon 00:00:00\" or \"Mon 00:00:00, Wed 18:00:00\"\r\n- every-months: Date and time at which the task starts each month, for example, \"14 00:00:00\" or \"14 00:00:00, 28 18:00:00\"\r\n*/"
+        encoded: false
+      in-binding: {}
+      out-binding: {}
+      description: Simple task with custom script capability.
+      position:
+        'y': 60
+        x: 150
+      name: item1
+      out-name: item0
+      type: task
+      comparator: 0
+  root-name: item1
+  object-name: 'workflow:name=generic'
+  id: f1375fd6-898a-4089-aea7-7fc9d347176e
+  version: 0.0.0
+  api-version: 6.0.0
+  restartMode: 1
+  resumeFromFailedMode: 0
+  editor-version: '2.0'

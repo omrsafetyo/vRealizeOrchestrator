@@ -1,0 +1,45 @@
+inputForms:
+  - layout:
+      pages: []
+    schema: {}
+    itemId: ''
+workflowSchema:
+  display-name: Process SolarWinds Queue
+  position:
+    'y': 50
+    x: 100
+  input: {}
+  output: {}
+  attrib: []
+  workflow-item:
+    - in-binding: {}
+      out-binding: {}
+      position:
+        'y': 45.40909090909091
+        x: 585
+      name: item0
+      type: end
+      end-mode: '0'
+      comparator: 0
+    - display-name: Process Queue
+      script:
+        value: "var queue = System.getModule(\"omrsafetyo.utilities.queue\").getQueue(\"SolarWindsIngestQueue\");\nvar count = System.getModule(\"omrsafetyo.utilities.queue\").getQueueLength(queue);\nvar addBack = [];\n\nwhile ( count > 0 ) {\n\tSystem.log(\"There are \" + count + \" items in the queue\");\n\t// This removes the last item from the queue, and returns it to the var item\n\tvar item = System.getModule(\"omrsafetyo.utilities.queue\").popQueueItem(queue)\n    try {\n        var NodeId;\n        // log the values\n        var RequestId = item.RequestId\n\n        var Database = 'HSRequests';\n        System.log(\"RequestId is \" + RequestId);\n\n        var VMNameArr = System.getModule(\"omrsafetyo.utilities.cmdb\").getRequestMeta(RequestId,'Hostname',Database);\n        var VMName = VMNameArr[0].meta_value;\n        System.log(\"VMName is \" + VMName);\n\n        var DomainArr = System.getModule(\"omrsafetyo.utilities.cmdb\").getRequestMeta(RequestId,'Domain',Database);\n        var Domain = DomainArr[0].meta_value;\n        System.log(\"Domain is \" + Domain);\n\n        var HostName = VMName + \".\" + Domain;\n\n        var SWNodeId = System.getModule(\"com.tylertech.solarwinds\").getSolarWindsNodeId(null, HostName, null, null) ;\n        \n        // Get the Host Name based on meta\n        // count = System.getModule(\"omrsafetyo.utilities.cloudendureapi\").getCloudEndureQueueCount();\n        // check to see if we can pull back a node Id\n\n        // if we get a NodeId, do nothing, exit.\n\n        // if we don't get a NodeId, add back to the queue\n\n        // An invalid operation was specified - move it back to the queue.\n        // We may do something different later, but for now this keeps it in the queue for examination\n    }\n    catch ( e ) {\n        System.log(e)\n        addBack.push(item);\n    }\n    if ( ! SWNodeId || SWNodeId == 'None' || SWNodeId == null ) {\n        // if the node id isn't detected, put it back in the queue.  This will cause this node to go back through\n        // the queue again for verification the node was added.  Once the NodeId is detected it won't be added back,\n        // confirming ingest, and breaking the loop.\n        addBack.push(item);\n    }\n\n    var wf = Server.getWorkflowWithId(\"7760a19c-d643-4ff3-864b-faaba9c45616\");\n    if ( wf ) {\n        Server.log(\"Starting SolarWinds Ingest for RequestId \" + RequestId);\n        var wfParams = new Properties();\n        wfParams.put(\"RequestId\", RequestId);\n        var wfToken = wf.execute(wfParams);\n        \n        // Don't bother waiting.  We're pushing back to the queue instead, and we'll check it was ingested next iteration.\n\n        //System.sleep(5000);\n        //while (wfToken.state == \"running\") {\n        //    System.sleep(5000);\n        //} // while\n        //Server.log(\"Finished Actifio protection Wf - checking status...\");\n        \n        //if ( wfToken.state == \"completed\" ) {\n        //    var outputParams = wfToken.getOutputParameters();  \n        //    CreatedApplication = outputParams.get(\"CreatedApplication\");\n        //} // if ( wfToken.state == \"completed\" )\n        //else {\n        //    System.log(\"Workflow state is \" + wfToken.state);\n        //} // else\n    }\n    else {\n        Server.log(\"Unable to get workflow for SolarWinds Ingest\");\n    }\n    \n    var count = System.getModule(\"omrsafetyo.utilities.queue\").getQueueLength(queue);\n}\n\n// If we had any failures, or if anything needs to be added back to the queue, add it back.\nif ( addBack.length != 0 ) {\n\tfor each (item in addBack) {\n        var queueItem = new Properties();\n        System.log(\"Re-adding item to queue: \" + item.RequestId)\n        queueItem.put(\"RequestId\", RequestId);\n        System.getModule(\"omrsafetyo.utilities.queue\").addQueueItem(queue, queueItem);\n\t}\n}"
+        encoded: false
+      in-binding: {}
+      out-binding: {}
+      position:
+        'y': 60
+        x: 300
+      name: item1
+      out-name: item0
+      type: task
+      comparator: 0
+  root-name: item1
+  object-name: 'workflow:name=generic'
+  id: 57ab439a-d940-4c67-a8c5-c846d86eef54
+  version: 0.0.5
+  api-version: 6.0.0
+  allowed-operations: vfe
+  restartMode: 1
+  resumeFromFailedMode: 0
+  editor-version: '2.0'

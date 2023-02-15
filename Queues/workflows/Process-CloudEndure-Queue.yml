@@ -1,0 +1,37 @@
+inputForms: []
+workflowSchema:
+  display-name: Process CloudEndure Queue
+  position:
+    'y': 50
+    x: 100
+  attrib: []
+  workflow-item:
+    - position:
+        'y': 45.40909090909091
+        x: 585
+      name: item0
+      type: end
+      end-mode: '0'
+      comparator: 0
+    - display-name: Process Queue
+      script:
+        value: "var count = System.getModule(\"omrsafetyo.utilities.queue\").getQueueCount();\nvar addBack = [];\n\nwhile ( count > 0 ) {\n\tSystem.log(\"There are \" + count + \" items in the queue\");\n\t// This removes the last item from the queue, and returns it to the var item\n\tvar item = System.getModule(\"omrsafetyo.utilities.queue\").popQueueItem();\n\t\n\t// log the values\n\tSystem.log(item.operation);\n\tSystem.log(item.projectName);\n\tSystem.log(item.machineName);\n\t\n\t// Process this item based on the operation\n\tswitch (item.operation) {\n\t\tcase 'pause':\n\t\t    System.log('pause')\n\t\t\ttry {\n        \t\tactionResult = System.getModule(\"omrsafetyo.utilities.cloudendureapi\").getMachineAndPauseReplication(null,item.machineName,item.projectName);\n\t\t\t} catch (e) {\n\t\t\t\tSystem.warn(e)\n\t\t\t\taddBack.push(item);\n\t\t\t}\n\t\t\tbreak;\n\t\tcase 'delete':\n\t\t\tSystem.log('delete')\n\t\t\ttry {\n\t\t\t\tactionResult = System.getModule(\"omrsafetyo.utilities.cloudendureapi\").getMachineAndDeleteFromCloudEndure(null,item.machineName,item.projectName);\n\t\t\t} catch (e) {\n\t\t\t\tSystem.warn(e)\n\t\t\t\taddBack.push(item);\n\t\t\t}\n\t\t\tbreak;\n\t\tdefault:\n\t\t\t// An invalid operation was specified - move it back to the queue.\n\t\t\t// We may do something different later, but for now this keeps it in the queue for examination\n\t\t\tSystem.log('Invalid operation: ' + item.operation)\n\t\t\taddBack.push(item);\n\t\t\tbreak;\n\t}\n\t// Get a new count.  Items that are added back to the queue are done outside this loop, so process everything in the queue until there's nothing left.\n\tcount = System.getModule(\"omrsafetyo.utilities.queue\").getQueueCount();\n}\n\n// If we had any failures, or if anything needs to be added back to the queue, add it back.\nif ( addBack.length != 0 ) {\n\tfor each (item in addBack) {\n\t\tSystem.log(\"Re-adding item to queue: \" + item.operation + ',' + item.projectName + ',' +item.machineName)\n\t\tvar success = System.getModule(\"omrsafetyo.utilities.queue\").addQueueItem(item.operation,item.projectName,item.machineName);\n\t}\n}"
+        encoded: false
+      in-binding: {}
+      out-binding: {}
+      position:
+        'y': 55.90909090909091
+        x: 305
+      name: item1
+      out-name: item0
+      type: task
+      comparator: 0
+  presentation: {}
+  root-name: item1
+  object-name: 'workflow:name=generic'
+  id: 8aee55ff-c06f-45dc-8765-e43741ef74fa
+  version: 0.0.5
+  api-version: 6.0.0
+  allowed-operations: vfe
+  restartMode: 1
+  resumeFromFailedMode: 0

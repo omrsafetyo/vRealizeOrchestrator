@@ -1,0 +1,103 @@
+inputForms:
+  - layout:
+      pages: []
+    schema: {}
+    itemId: ''
+workflowSchema:
+  display-name: Queue Poller Scheduled Task
+  position:
+    'y': 50
+    x: 100
+  input: {}
+  output: {}
+  attrib: []
+  workflow-item:
+    - in-binding: {}
+      out-binding: {}
+      position:
+        'y': 45.40909090909091
+        x: 585
+      name: item0
+      type: end
+      end-mode: '0'
+      comparator: 0
+    - display-name: Process Queue
+      script:
+        value: >-
+          var allQueues = {
+              "SolarWindsIngestQueue" : "57ab439a-d940-4c67-a8c5-c846d86eef54",
+              "CloudEndureQueue" : "8aee55ff-c06f-45dc-8765-e43741ef74fa"
+          }
+
+
+          // we need to pass a properties object to wf.execute()
+
+          // even if there are no parameters
+
+          var params = new Properties();  
+
+
+          // loop over the queues, check the queue length, and start processor
+          if there are items queued
+
+          for ( key in allQueues ) {
+              var count = 0
+              // cloud endure has a more proprietary queue
+              if ( key == "CloudEndureQueue" ) {
+                  count = System.getModule("omrsafetyo.utilities.cloudendureapi").getCloudEndureQueueCount();
+              }
+              else {
+                  var queue = System.getModule("omrsafetyo.utilities.queue").getQueue(key);
+                  count = System.getModule("omrsafetyo.utilities.queue").getQueueLength(queue);
+              }
+              if ( count > 0 ) {
+                  var workflowId = allQueues[key]
+                  // find the workflow by Id
+                  var wf = Server.getWorkflowWithId(workflowId);
+                  if ( wf ) {
+                      var tokens = wf.executions;
+                      var execute = true;
+                      // Skip if the workflow is already running
+                      for each (token in tokens) {
+                          if ( token.state == 'running' || token.state == 'waiting-signal' ) {
+                              execute = false;
+                              break
+                          }
+                      }
+
+                      // execute if execute is true
+                      if ( execute === true ) {
+                          Server.log("Starting " + key + " - Id: " + workflowId);
+                          var wfToken = wf.execute(params)
+                      }
+                      else {
+                          Server.log("Skipping " + key + " - Id: " + workflowId + " - it has queue items, but is already running.");
+                      }
+                  }
+                  else {
+                      Server.log("Unable to get workflow for " + key + " queue processing...");
+                  }
+              }
+              else {
+                  Server.log("No items in " + key + " queue.")
+              }
+          }
+        encoded: false
+      in-binding: {}
+      out-binding: {}
+      position:
+        'y': 60
+        x: 300
+      name: item1
+      out-name: item0
+      type: task
+      comparator: 0
+  root-name: item1
+  object-name: 'workflow:name=generic'
+  id: e6d27cfc-ac02-4906-be42-dc0112c7563d
+  version: 0.0.5
+  api-version: 6.0.0
+  allowed-operations: vef
+  restartMode: 1
+  resumeFromFailedMode: 0
+  editor-version: '2.0'
